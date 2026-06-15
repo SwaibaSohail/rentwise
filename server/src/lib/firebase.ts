@@ -1,9 +1,11 @@
-import admin from "firebase-admin";
+import { initializeApp, getApps, getApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { env } from "../config/env";
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
+function getFirebaseApp() {
+  if (getApps().length) return getApp();
+  return initializeApp({
+    credential: cert({
       projectId: env.FIREBASE_PROJECT_ID,
       clientEmail: env.FIREBASE_CLIENT_EMAIL,
       // .env stores the key with literal \n; restore real newlines.
@@ -11,8 +13,6 @@ if (!admin.apps.length) {
     }),
   });
 }
-
-export const firebaseAuth = admin.auth();
 
 /**
  * Verify a `Bearer <token>` Authorization header.
@@ -23,7 +23,8 @@ export async function getVerifiedUid(
 ): Promise<{ uid: string; email?: string } | null> {
   if (!authHeader?.startsWith("Bearer ")) return null;
   try {
-    const decoded = await firebaseAuth.verifyIdToken(authHeader.slice("Bearer ".length));
+    const auth = getAuth(getFirebaseApp());
+    const decoded = await auth.verifyIdToken(authHeader.slice("Bearer ".length));
     return { uid: decoded.uid, email: decoded.email };
   } catch {
     return null;

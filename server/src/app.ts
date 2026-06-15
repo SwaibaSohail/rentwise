@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middleware/error";
 import { env } from "./config/env";
+import { authRouter } from "./routes/auth";
 
 export function createApp() {
   const app = express();
@@ -11,6 +12,8 @@ export function createApp() {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  app.use("/api/auth", authRouter);
 
   app.use(errorHandler);
   return app;
