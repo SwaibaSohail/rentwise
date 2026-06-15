@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  LANDLORD
+  TENANT
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RENTED
+}
+
+enum TenancyStatus {
+  ACTIVE
+  ENDED
+}
+
+enum TicketCategory {
+  PLUMBING
+  ELECTRICAL
+  APPLIANCE
+  STRUCTURAL
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  name        String
+  role        Role
+  phone       String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+
+  properties    Property[]          @relation("LandlordProperties")
+  tenancies     Tenancy[]
+  ticketsFiled  MaintenanceTicket[] @relation("TicketTenant")
+  ticketUpdates TicketUpdate[]
+}
+
+model Property {
+  id          String         @id @default(cuid())
+  landlordId  String
+  landlord    User           @relation("LandlordProperties", fields: [landlordId], references: [id])
+  title       String
+  description String
+  address     String
+  city        String
+  rentAmount  Int
+  bedrooms    Int
+  bathrooms   Int
+  status      PropertyStatus @default(AVAILABLE)
+  imageUrls   String[]
+  createdAt   DateTime       @default(now())
+
+  tenancies Tenancy[]
+  tickets   MaintenanceTicket[]
+}
+
+model Tenancy {
+  id         String        @id @default(cuid())
+  propertyId String
+  property   Property      @relation(fields: [propertyId], references: [id])
+  tenantId   String
+  tenant     User          @relation(fields: [tenantId], references: [id])
+  startDate  DateTime
+  endDate    DateTime?
+  status     TenancyStatus @default(ACTIVE)
+}
+
+model MaintenanceTicket {
+  id          String            @id @default(cuid())
+  propertyId  String
+  property    Property          @relation(fields: [propertyId], references: [id])
+  tenantId    String
+  tenant      User              @relation("TicketTenant", fields: [tenantId], references: [id])
+  title       String
+  description String
+  category    TicketCategory
+  priority    TicketPriority    @default(MEDIUM)
+  status      TicketStatus      @default(OPEN)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  updates TicketUpdate[]
+}
+
+model TicketUpdate {
+  id        String            @id @default(cuid())
+  ticketId  String
+  ticket    MaintenanceTicket @relation(fields: [ticketId], references: [id])
+  authorId  String
+  author    User              @relation(fields: [authorId], references: [id])
+  message   String
+  newStatus TicketStatus?
+  createdAt DateTime          @default(now())
+}
