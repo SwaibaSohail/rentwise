@@ -1,32 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import LandlordDashboard from "./pages/LandlordDashboard";
+import TenantDashboard from "./pages/TenantDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-function useHealth() {
-  return useQuery({
-    queryKey: ["health"],
-    queryFn: async () => {
-      const res = await api.get<{ status: string }>("/health");
-      return res.data;
-    },
-  });
+function HomeRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return <p className="p-8">Loading…</p>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={user.role === "LANDLORD" ? "/landlord" : "/tenant"} replace />;
 }
 
-function App() {
-  const { data, isLoading, isError } = useHealth();
-  const apiStatus = isLoading
-    ? "checking…"
-    : isError
-    ? "offline"
-    : data?.status ?? "unknown";
-
+export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-bold">RentWise</h1>
-      <p className="text-muted-foreground">API: {apiStatus}</p>
-      <Button>Get started</Button>
-    </main>
+    <Routes>
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/landlord"
+        element={<ProtectedRoute role="LANDLORD"><LandlordDashboard /></ProtectedRoute>}
+      />
+      <Route
+        path="/tenant"
+        element={<ProtectedRoute role="TENANT"><TenantDashboard /></ProtectedRoute>}
+      />
+    </Routes>
   );
 }
-
-export default App;

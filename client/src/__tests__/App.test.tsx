@@ -1,19 +1,22 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import App from "../App";
-import { QueryProvider } from "../providers/QueryProvider";
+import { MemoryRouter } from "react-router-dom";
 
+vi.mock("../context/AuthContext", () => ({
+  useAuth: () => ({ user: null, loading: false }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 vi.mock("@/lib/firebase", () => ({ auth: { currentUser: null } }));
 
-describe("App", () => {
-  it("renders the RentWise heading", () => {
+import App from "../App";
+
+describe("App routing", () => {
+  it("redirects an unauthenticated visit to the login page", () => {
     render(
-      <QueryProvider>
+      <MemoryRouter initialEntries={["/"]}>
         <App />
-      </QueryProvider>
+      </MemoryRouter>
     );
-    expect(
-      screen.getByRole("heading", { name: /rentwise/i })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/log in to rentwise/i)).toBeInTheDocument();
   });
 });
