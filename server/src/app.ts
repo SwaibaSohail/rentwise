@@ -3,6 +3,7 @@ import cors from "cors";
 import { errorHandler } from "./middleware/error";
 import { env } from "./config/env";
 import { authRouter } from "./routes/auth";
+import { propertiesRouter } from "./routes/properties";
 
 export function createApp() {
   const app = express();
@@ -14,6 +15,7 @@ export function createApp() {
   });
 
   app.use("/api/auth", authRouter);
+  app.use("/api/properties", propertiesRouter);
 
   app.use(errorHandler);
   return app;
