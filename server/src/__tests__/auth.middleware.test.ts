@@ -37,13 +37,13 @@ describe("requireAuth", () => {
     expect(res.status).toBe(404);
   });
 
-  it("attaches user and calls next when valid", async () => {
+  it("attaches user (incl. name) and calls next when valid", async () => {
     (getVerifiedUid as any).mockResolvedValue({ uid: "abc", email: "a@b.com" });
     (prisma.user.findUnique as any).mockResolvedValue({
-      id: "u1", role: "LANDLORD", firebaseUid: "abc", email: "a@b.com",
+      id: "u1", role: "LANDLORD", firebaseUid: "abc", email: "a@b.com", name: "Sam Landlord",
     });
     const res = await request(appWith()).get("/protected").set("Authorization", "Bearer x");
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ id: "u1", role: "LANDLORD" });
+    expect(res.body.user).toMatchObject({ id: "u1", role: "LANDLORD", name: "Sam Landlord" });
   });
 });

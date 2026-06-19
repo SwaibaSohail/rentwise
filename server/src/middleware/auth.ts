@@ -3,7 +3,7 @@ import { getVerifiedUid } from "../lib/firebase";
 import { prisma } from "../lib/prisma";
 
 export interface AuthedRequest extends Request {
-  user?: { id: string; role: string; firebaseUid: string; email: string };
+  user?: { id: string; role: string; firebaseUid: string; email: string; name: string };
 }
 
 export async function requireAuth(
@@ -19,6 +19,6 @@ export async function requireAuth(
   if (!user) {
     return res.status(404).json({ error: "user_not_found", message: "No account; register first" });
   }
-  req.user = { id: user.id, role: user.role, firebaseUid: user.firebaseUid, email: user.email };
+  req.user = { id: user.id, role: user.role, firebaseUid: user.firebaseUid, email: user.email, name: user.name };
   next();
 }
