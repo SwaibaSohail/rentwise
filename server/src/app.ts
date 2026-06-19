@@ -4,6 +4,7 @@ import { errorHandler } from "./middleware/error";
 import { env } from "./config/env";
 import { authRouter } from "./routes/auth";
 import { propertiesRouter } from "./routes/properties";
+import { tenanciesRouter } from "./routes/tenancies";
 
 export function createApp() {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp() {
 
   app.use("/api/auth", authRouter);
   app.use("/api/properties", propertiesRouter);
+  app.use("/api/tenancies", tenanciesRouter);
 
   app.use(errorHandler);
   return app;
