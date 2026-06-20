@@ -5,6 +5,7 @@ import { env } from "./config/env";
 import { authRouter } from "./routes/auth";
 import { propertiesRouter } from "./routes/properties";
 import { tenanciesRouter } from "./routes/tenancies";
+import { ticketsRouter } from "./routes/tickets";
 
 export function createApp() {
   const app = express();
@@ -18,6 +19,7 @@ export function createApp() {
   app.use("/api/auth", authRouter);
   app.use("/api/properties", propertiesRouter);
   app.use("/api/tenancies", tenanciesRouter);
+  app.use("/api/tickets", ticketsRouter);
 
   app.use(errorHandler);
   return app;
