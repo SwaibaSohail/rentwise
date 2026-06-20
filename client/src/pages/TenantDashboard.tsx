@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { propertiesApi, type Property } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";
+import { ticketsApi, type CreateTicketInput } from "../lib/tickets";
+import { useTicketEvents } from "../hooks/useTicketEvents";
 import PropertyCard from "../components/PropertyCard";
+import TicketForm from "../components/TicketForm";
+import TicketList from "../components/TicketList";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -11,7 +15,10 @@ import {
 
 export default function TenantDashboard() {
   const { user, logout } = useAuth();
+  const qc = useQueryClient();
   const [selected, setSelected] = useState<Property | null>(null);
+
+  useTicketEvents();
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties", "available"],
@@ -20,6 +27,16 @@ export default function TenantDashboard() {
   const { data: tenancy } = useQuery({
     queryKey: ["tenancies", "active"],
     queryFn: tenanciesApi.active,
+  });
+  const { data: myTickets = [] } = useQuery({
+    queryKey: ["tickets", "mine"],
+    queryFn: ticketsApi.listMine,
+    enabled: !!tenancy?.property,
+  });
+
+  const createTicketMut = useMutation({
+    mutationFn: (data: CreateTicketInput) => ticketsApi.create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tickets", "mine"] }),
   });
 
   return (
@@ -40,6 +57,30 @@ export default function TenantDashboard() {
           </div>
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold">Maintenance</h2>
+        {tenancy?.property ? (
+          <div className="grid gap-6">
+            <div>
+              <h3 className="mb-2 text-sm font-medium text-muted-foreground">File a new ticket</h3>
+              <div className="max-w-lg">
+                <TicketForm
+                  onSubmit={async (data) => { await createTicketMut.mutateAsync(data); }}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Your tickets</h3>
+              <TicketList tickets={myTickets} />
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            You need an active tenancy to file maintenance tickets. Browse available rentals below.
+          </p>
+        )}
+      </section>
 
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold">Available rentals</h2>

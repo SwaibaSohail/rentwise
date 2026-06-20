@@ -11,6 +11,12 @@ vi.mock("../lib/properties", () => ({
 vi.mock("../lib/tenancies", () => ({
   tenanciesApi: { active: vi.fn() },
 }));
+vi.mock("../lib/tickets", () => ({
+  ticketsApi: { listMine: vi.fn().mockResolvedValue([]), create: vi.fn() },
+}));
+vi.mock("../hooks/useTicketEvents", () => ({
+  useTicketEvents: () => {},
+}));
 
 import { propertiesApi } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";
