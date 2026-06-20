@@ -5,6 +5,8 @@ import { propertiesApi, type Property, type PropertyInput } from "../lib/propert
 import { tenanciesApi, type Tenancy } from "../lib/tenancies";
 import { ticketsApi, type Ticket, type TicketStatus } from "../lib/tickets";
 import { useTicketEvents } from "../hooks/useTicketEvents";
+import StatCard from "../components/StatCard";
+import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
 import PropertyForm from "../components/PropertyForm";
 import TicketList from "../components/TicketList";
@@ -39,17 +41,22 @@ export default function LandlordDashboard() {
     queryKey: ["tickets", "landlord"],
     queryFn: ticketsApi.listLandlord,
   });
+  const { data: stats } = useQuery({ queryKey: ["stats", "landlord"], queryFn: statsApi.landlord });
 
   const updateTicketMut = useMutation({
     mutationFn: (vars: { id: string; data: { message?: string; newStatus?: TicketStatus } }) =>
       ticketsApi.addUpdate(vars.id, vars.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tickets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+    },
   });
 
   const tenancyByProperty = new Map<string, Tenancy>(tenancies.map((t) => [t.propertyId, t]));
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["properties"] });
     qc.invalidateQueries({ queryKey: ["tenancies"] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
   };
 
   const createMut = useMutation({ mutationFn: propertiesApi.create, onSuccess: invalidate });
@@ -105,6 +112,15 @@ export default function LandlordDashboard() {
           <Button variant="outline" onClick={() => logout()}>Log out</Button>
         </div>
       </div>
+
+      {stats && (
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Properties" value={stats.totalProperties} sub={`${stats.available} available · ${stats.rented} rented`} />
+          <StatCard label="Occupancy" value={`${stats.occupancyRate}%`} />
+          <StatCard label="Active tenancies" value={stats.activeTenancies} />
+          <StatCard label="Open tickets" value={stats.tickets.open + stats.tickets.inProgress} sub={`${stats.tickets.resolved} resolved`} />
+        </section>
+      )}
 
       {isLoading ? (
         <p className="mt-8">Loading…</p>

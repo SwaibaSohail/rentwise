@@ -11,8 +11,8 @@ export function useTicketEvents() {
     let cleanup = () => {};
     getSocket().then((sock) => {
       if (!active || !sock) return;
-      const onNew = (t: Ticket) => { qc.invalidateQueries({ queryKey: ["tickets"] }); toast(`New ticket: ${t.title}`); };
-      const onUpd = () => { qc.invalidateQueries({ queryKey: ["tickets"] }); toast("A ticket was updated"); };
+      const onNew = (t: Ticket) => { qc.invalidateQueries({ queryKey: ["tickets"] }); qc.invalidateQueries({ queryKey: ["stats"] }); toast(`New ticket: ${t.title}`); };
+      const onUpd = () => { qc.invalidateQueries({ queryKey: ["tickets"] }); qc.invalidateQueries({ queryKey: ["stats"] }); toast("A ticket was updated"); };
       sock.on("ticket:new", onNew);
       sock.on("ticket:update", onUpd);
       cleanup = () => { sock.off("ticket:new", onNew); sock.off("ticket:update", onUpd); };

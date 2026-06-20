@@ -23,6 +23,15 @@ vi.mock("../lib/tickets", () => ({
 vi.mock("../hooks/useTicketEvents", () => ({
   useTicketEvents: () => {},
 }));
+vi.mock("../lib/stats", () => ({
+  statsApi: {
+    landlord: vi.fn().mockResolvedValue({
+      totalProperties: 0, available: 0, rented: 0, occupancyRate: 0,
+      activeTenancies: 0, tickets: { open: 0, inProgress: 0, resolved: 0, closed: 0 },
+    }),
+    tenant: vi.fn().mockResolvedValue({ hasHome: false, home: null, openTickets: 0, totalTickets: 0 }),
+  },
+}));
 
 import { propertiesApi } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";

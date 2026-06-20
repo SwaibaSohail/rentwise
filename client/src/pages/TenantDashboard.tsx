@@ -5,6 +5,8 @@ import { propertiesApi, type Property } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";
 import { ticketsApi, type CreateTicketInput } from "../lib/tickets";
 import { useTicketEvents } from "../hooks/useTicketEvents";
+import StatCard from "../components/StatCard";
+import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
 import TicketForm from "../components/TicketForm";
 import TicketList from "../components/TicketList";
@@ -34,9 +36,14 @@ export default function TenantDashboard() {
     enabled: !!tenancy?.property,
   });
 
+  const { data: stats } = useQuery({ queryKey: ["stats", "tenant"], queryFn: statsApi.tenant });
+
   const createTicketMut = useMutation({
     mutationFn: (data: CreateTicketInput) => ticketsApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tickets", "mine"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tickets", "mine"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+    },
   });
 
   return (
@@ -48,6 +55,14 @@ export default function TenantDashboard() {
         </div>
         <Button variant="outline" onClick={() => logout()}>Log out</Button>
       </div>
+
+      {stats && (
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard label="Your unit" value={stats.hasHome ? stats.home!.title : "None yet"} sub={stats.hasHome ? `${stats.home!.city} · $${stats.home!.rentAmount.toLocaleString()}/mo` : undefined} />
+          <StatCard label="Open tickets" value={stats.openTickets} />
+          <StatCard label="Total tickets" value={stats.totalTickets} />
+        </section>
+      )}
 
       {tenancy?.property && (
         <section className="mt-8">
