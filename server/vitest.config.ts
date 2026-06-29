@@ -9,6 +9,7 @@ export default defineConfig({
       FIREBASE_CLIENT_EMAIL: "test@test.iam.gserviceaccount.com",
       FIREBASE_PRIVATE_KEY: "test-key",
       DATABASE_URL: "postgresql://test:test@localhost:5432/test",
+      STRIPE_SECRET_KEY: "sk_test_dummy",
     },
   },
 });

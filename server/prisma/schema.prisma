@@ -50,6 +50,12 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id          String   @id @default(cuid())
   firebaseUid String   @unique
@@ -68,6 +74,7 @@ model User {
   landlordConversations Conversation[]      @relation("LandlordConversations")
   tenantConversations   Conversation[]      @relation("TenantConversations")
   sentMessages          Message[]           @relation("SentMessages")
+  payments              Payment[]           @relation("TenantPayments")
 }
 
 model Property {
@@ -99,6 +106,8 @@ model Tenancy {
   startDate  DateTime
   endDate    DateTime?
   status     TenancyStatus @default(ACTIVE)
+
+  payments Payment[]
 }
 
 model MaintenanceTicket {
@@ -162,4 +171,18 @@ model Message {
   sender         User         @relation("SentMessages", fields: [senderId], references: [id])
   body           String
   createdAt      DateTime     @default(now())
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  tenancyId       String
+  tenancy         Tenancy       @relation(fields: [tenancyId], references: [id])
+  tenantId        String
+  tenant          User          @relation("TenantPayments", fields: [tenantId], references: [id])
+  amount          Int
+  currency        String        @default("usd")
+  status          PaymentStatus @default(PENDING)
+  stripeSessionId String        @unique
+  createdAt       DateTime      @default(now())
+  paidAt          DateTime?
 }
