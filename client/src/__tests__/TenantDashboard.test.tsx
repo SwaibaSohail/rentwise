@@ -49,6 +49,14 @@ vi.mock("../lib/stats", () => ({
     tenant: vi.fn().mockResolvedValue({ hasHome: false, home: null, openTickets: 0, totalTickets: 0 }),
   },
 }));
+vi.mock("../lib/payments", () => ({
+  paymentsApi: {
+    checkout: vi.fn(),
+    confirm: vi.fn(),
+    listMine: vi.fn().mockResolvedValue([]),
+    listLandlord: vi.fn().mockResolvedValue([]),
+  },
+}));
 
 import { propertiesApi } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";

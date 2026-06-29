@@ -6,6 +6,7 @@ import { tenanciesApi, type Tenancy } from "../lib/tenancies";
 import { ticketsApi, type Ticket, type TicketStatus } from "../lib/tickets";
 import { applicationsApi } from "../lib/applications";
 import { chatApi, type ConversationSummary } from "../lib/chat";
+import { paymentsApi } from "../lib/payments";
 import { useTicketEvents } from "../hooks/useTicketEvents";
 import { useApplicationEvents } from "../hooks/useApplicationEvents";
 import { useChatEvents } from "../hooks/useChatEvents";
@@ -57,6 +58,10 @@ export default function LandlordDashboard() {
   const { data: conversations = [] } = useQuery({
     queryKey: ["conversations"],
     queryFn: chatApi.list,
+  });
+  const { data: receivedPayments = [] } = useQuery({
+    queryKey: ["payments", "landlord"],
+    queryFn: paymentsApi.listLandlord,
   });
 
   const updateTicketMut = useMutation({
@@ -347,6 +352,37 @@ export default function LandlordDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-lg font-semibold">Payments received</h2>
+        {receivedPayments.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No payments received yet.</p>
+        ) : (
+          <ul className="grid gap-3">
+            {receivedPayments.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm">
+                <div>
+                  <p className="font-medium">{p.tenant?.name ?? "Tenant"}</p>
+                  <p className="text-muted-foreground">{p.tenancy?.property?.title ?? "Property"}</p>
+                </div>
+                <span>${(p.amount / 100).toLocaleString()}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    p.status === "PAID"
+                      ? "bg-green-100 text-green-700"
+                      : p.status === "FAILED"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {p.status}
+                </span>
+                <span className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

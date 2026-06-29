@@ -6,6 +6,7 @@ import { tenanciesApi } from "../lib/tenancies";
 import { ticketsApi, type CreateTicketInput } from "../lib/tickets";
 import { applicationsApi } from "../lib/applications";
 import { chatApi } from "../lib/chat";
+import { paymentsApi } from "../lib/payments";
 import { useTicketEvents } from "../hooks/useTicketEvents";
 import { useApplicationEvents } from "../hooks/useApplicationEvents";
 import { useChatEvents } from "../hooks/useChatEvents";
@@ -48,6 +49,19 @@ export default function TenantDashboard() {
   const { data: myApplications = [] } = useQuery({
     queryKey: ["applications", "mine"],
     queryFn: applicationsApi.listMine,
+  });
+
+  const { data: myPayments = [] } = useQuery({
+    queryKey: ["payments", "mine"],
+    queryFn: paymentsApi.listMine,
+    enabled: !!tenancy,
+  });
+
+  const checkoutMut = useMutation({
+    mutationFn: paymentsApi.checkout,
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
   });
 
   const createTicketMut = useMutation({
@@ -102,6 +116,43 @@ export default function TenantDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <PropertyCard property={tenancy.property} onClick={() => setSelected(tenancy.property!)} />
           </div>
+        </section>
+      )}
+
+      {tenancy?.property && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold">Rent</h2>
+          <Button
+            onClick={() => checkoutMut.mutate()}
+            disabled={checkoutMut.isPending}
+          >
+            {checkoutMut.isPending ? "Redirecting…" : `Pay rent ($${tenancy.property.rentAmount.toLocaleString()})`}
+          </Button>
+          {myPayments.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Payment history</h3>
+              <ul className="grid gap-2">
+                {myPayments.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <span>{p.tenancy?.property?.title ?? "Rent"}</span>
+                    <span className="text-muted-foreground">${(p.amount / 100).toLocaleString()}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        p.status === "PAID"
+                          ? "bg-green-100 text-green-700"
+                          : p.status === "FAILED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                    <span className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
       )}
 
