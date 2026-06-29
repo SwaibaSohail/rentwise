@@ -23,6 +23,17 @@ vi.mock("../lib/tickets", () => ({
 }));
 vi.mock("../hooks/useTicketEvents", () => ({ useTicketEvents: () => {} }));
 vi.mock("../hooks/useApplicationEvents", () => ({ useApplicationEvents: () => {} }));
+vi.mock("../lib/chat", () => ({
+  chatApi: {
+    list: vi.fn().mockResolvedValue([]),
+    start: vi.fn(),
+    messages: vi.fn().mockResolvedValue([]),
+    send: vi.fn(),
+  },
+}));
+vi.mock("../hooks/useChatEvents", () => ({
+  useChatEvents: () => {},
+}));
 vi.mock("../lib/stats", () => ({
   statsApi: {
     landlord: vi.fn().mockResolvedValue({

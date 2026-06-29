@@ -5,13 +5,16 @@ import { propertiesApi, type Property, type PropertyInput } from "../lib/propert
 import { tenanciesApi, type Tenancy } from "../lib/tenancies";
 import { ticketsApi, type Ticket, type TicketStatus } from "../lib/tickets";
 import { applicationsApi } from "../lib/applications";
+import { chatApi, type ConversationSummary } from "../lib/chat";
 import { useTicketEvents } from "../hooks/useTicketEvents";
 import { useApplicationEvents } from "../hooks/useApplicationEvents";
+import { useChatEvents } from "../hooks/useChatEvents";
 import StatCard from "../components/StatCard";
 import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
 import PropertyForm from "../components/PropertyForm";
 import TicketList from "../components/TicketList";
+import ChatThread from "../components/ChatThread";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +31,11 @@ export default function LandlordDashboard() {
   const [assignEmail, setAssignEmail] = useState("");
   const [assignError, setAssignError] = useState("");
   const [ticketComments, setTicketComments] = useState<Record<string, string>>({});
+  const [activeConv, setActiveConv] = useState<ConversationSummary | null>(null);
 
   useTicketEvents();
   useApplicationEvents();
+  useChatEvents();
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties", "mine"],
@@ -48,6 +53,10 @@ export default function LandlordDashboard() {
   const { data: pendingApplications = [] } = useQuery({
     queryKey: ["applications", "landlord"],
     queryFn: applicationsApi.listLandlord,
+  });
+  const { data: conversations = [] } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: chatApi.list,
   });
 
   const updateTicketMut = useMutation({
@@ -304,6 +313,40 @@ export default function LandlordDashboard() {
           />
         )}
       </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-lg font-semibold">Messages</h2>
+        {conversations.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No conversations yet.</p>
+        ) : (
+          <ul className="grid gap-3">
+            {conversations.map((conv) => (
+              <li key={conv.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <p className="font-medium">{conv.other.name}</p>
+                  {conv.lastMessage && (
+                    <p className="text-sm text-muted-foreground line-clamp-1">{conv.lastMessage.body}</p>
+                  )}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setActiveConv(conv)}>
+                  Open
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Dialog open={!!activeConv} onOpenChange={(o) => { if (!o) setActiveConv(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chat with {activeConv?.other.name ?? ""}</DialogTitle>
+          </DialogHeader>
+          {activeConv && user && (
+            <ChatThread conversationId={activeConv.id} meId={user.id} />
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

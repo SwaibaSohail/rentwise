@@ -29,6 +29,38 @@ vi.mock("../lib/tickets", () => ({
 vi.mock("../hooks/useTicketEvents", () => ({
   useTicketEvents: () => {},
 }));
+vi.mock("../hooks/useApplicationEvents", () => ({
+  useApplicationEvents: () => {},
+}));
+vi.mock("../lib/applications", () => ({
+  applicationsApi: {
+    listMine: vi.fn().mockResolvedValue([]),
+    listLandlord: vi.fn().mockResolvedValue([]),
+    apply: vi.fn(),
+    approve: vi.fn(),
+    reject: vi.fn(),
+  },
+}));
+vi.mock("../lib/stats", () => ({
+  statsApi: {
+    landlord: vi.fn().mockResolvedValue({
+      totalProperties: 0, available: 0, rented: 0, occupancyRate: 0,
+      activeTenancies: 0, tickets: { open: 0, inProgress: 0, resolved: 0, closed: 0 },
+    }),
+    tenant: vi.fn().mockResolvedValue({ hasHome: false, home: null, openTickets: 0, totalTickets: 0 }),
+  },
+}));
+vi.mock("../lib/chat", () => ({
+  chatApi: {
+    list: vi.fn().mockResolvedValue([]),
+    start: vi.fn(),
+    messages: vi.fn().mockResolvedValue([]),
+    send: vi.fn(),
+  },
+}));
+vi.mock("../hooks/useChatEvents", () => ({
+  useChatEvents: () => {},
+}));
 
 import { ticketsApi } from "../lib/tickets";
 import LandlordDashboard from "../pages/LandlordDashboard";

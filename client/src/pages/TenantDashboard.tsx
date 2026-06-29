@@ -5,13 +5,16 @@ import { propertiesApi, type Property } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";
 import { ticketsApi, type CreateTicketInput } from "../lib/tickets";
 import { applicationsApi } from "../lib/applications";
+import { chatApi } from "../lib/chat";
 import { useTicketEvents } from "../hooks/useTicketEvents";
 import { useApplicationEvents } from "../hooks/useApplicationEvents";
+import { useChatEvents } from "../hooks/useChatEvents";
 import StatCard from "../components/StatCard";
 import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
 import TicketForm from "../components/TicketForm";
 import TicketList from "../components/TicketList";
+import ChatThread from "../components/ChatThread";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -21,9 +24,12 @@ export default function TenantDashboard() {
   const { user, logout } = useAuth();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<Property | null>(null);
+  const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useTicketEvents();
   useApplicationEvents();
+  useChatEvents();
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties", "available"],
@@ -123,6 +129,22 @@ export default function TenantDashboard() {
         )}
       </section>
 
+      {tenancy?.property && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold">Message your landlord</h2>
+          <Button
+            onClick={async () => {
+              const landlordId = tenancy.property!.landlordId;
+              const conv = await chatApi.start(landlordId);
+              setChatConvId(conv.id);
+              setChatOpen(true);
+            }}
+          >
+            Open chat
+          </Button>
+        </section>
+      )}
+
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold">Available rentals</h2>
         {isLoading ? (
@@ -187,6 +209,17 @@ export default function TenantDashboard() {
               <p>{selected.description}</p>
               <p className="font-semibold">${selected.rentAmount.toLocaleString()}/mo · {selected.bedrooms} bed · {selected.bathrooms} bath</p>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={chatOpen} onOpenChange={(o) => { if (!o) { setChatOpen(false); setChatConvId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chat with your landlord</DialogTitle>
+          </DialogHeader>
+          {chatConvId && user && (
+            <ChatThread conversationId={chatConvId} meId={user.id} />
           )}
         </DialogContent>
       </Dialog>
