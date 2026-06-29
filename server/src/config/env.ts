@@ -9,6 +9,9 @@ const schema = z.object({
   FIREBASE_CLIENT_EMAIL: z.string(),
   FIREBASE_PRIVATE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string(),
 });
 
 export const env = schema.parse(process.env);
