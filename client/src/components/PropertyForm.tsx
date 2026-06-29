@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Property, PropertyInput } from "../lib/properties";
+import { uploadsApi } from "../lib/uploads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ export default function PropertyForm({
   const [bedrooms, setBedrooms] = useState(String(initial?.bedrooms ?? ""));
   const [bathrooms, setBathrooms] = useState(String(initial?.bathrooms ?? ""));
   const [imageUrl, setImageUrl] = useState(initial?.imageUrls?.[0] ?? "");
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -75,11 +77,34 @@ export default function PropertyForm({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="imageUrl">Image URL (optional)</Label>
-        <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" />
+        <Label htmlFor="propertyImage">Property image (optional)</Label>
+        <input
+          id="propertyImage"
+          type="file"
+          accept="image/*"
+          aria-label="Property image"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setUploading(true);
+            try {
+              const { url } = await uploadsApi.image(file);
+              setImageUrl(url);
+            } catch {
+              setError("Image upload failed");
+            } finally {
+              setUploading(false);
+            }
+          }}
+          className="text-sm"
+        />
+        {uploading && <p className="text-sm text-muted-foreground">Uploading…</p>}
+        {imageUrl && !uploading && (
+          <img src={imageUrl} alt="Property preview" className="mt-1 h-24 w-full rounded-md object-cover" />
+        )}
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button type="submit" disabled={submitting}>{submitting ? "Saving…" : "Save"}</Button>
+      <Button type="submit" disabled={submitting || uploading}>{submitting ? "Saving…" : "Save"}</Button>
     </form>
   );
 }
