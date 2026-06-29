@@ -4,7 +4,7 @@ vi.mock("../lib/prisma", () => ({
   prisma: {
     property: { findUnique: vi.fn(), update: vi.fn() },
     tenancy: { findFirst: vi.fn(), create: vi.fn() },
-    application: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    application: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn(), updateMany: vi.fn(), findMany: vi.fn() },
   },
 }));
 
@@ -71,6 +71,7 @@ describe("application service - approve", () => {
     (prisma.tenancy.create as any).mockResolvedValue({ id: "ten1", status: "ACTIVE" });
     (prisma.property.update as any).mockResolvedValue({});
     (prisma.application.update as any).mockResolvedValue({ ...APP, status: "APPROVED" });
+    (prisma.application.findMany as any).mockResolvedValue([{ tenantId: "T2" }, { tenantId: "T3" }]);
     (prisma.application.updateMany as any).mockResolvedValue({ count: 2 });
 
     const result = await svc.approve("L1", "app1");
@@ -90,6 +91,7 @@ describe("application service - approve", () => {
     );
     expect(result.tenancy).toMatchObject({ id: "ten1" });
     expect(result.tenantId).toBe("T1");
+    expect(result.rejectedTenantIds).toEqual(["T2", "T3"]);
   });
 });
 

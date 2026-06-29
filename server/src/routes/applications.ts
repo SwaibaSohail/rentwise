@@ -45,8 +45,11 @@ applicationsRouter.get("/landlord", requireRole("LANDLORD"), async (req: AuthedR
 // landlord approves -> creates tenancy, property RENTED, auto-rejects others
 applicationsRouter.patch("/:id/approve", requireRole("LANDLORD"), async (req: AuthedRequest, res, next) => {
   try {
-    const { tenantId } = await svc.approve(req.user!.id, req.params.id);
+    const { tenantId, rejectedTenantIds } = await svc.approve(req.user!.id, req.params.id);
     emitToUser(tenantId, "application:approved", { applicationId: req.params.id });
+    for (const rid of rejectedTenantIds ?? []) {
+      emitToUser(rid, "application:rejected", { auto: true });
+    }
     res.json({ ok: true });
   } catch (err) {
     next(err);

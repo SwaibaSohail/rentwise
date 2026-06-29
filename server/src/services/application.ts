@@ -55,11 +55,16 @@ export async function approve(landlordId: string, appId: string) {
   });
   await prisma.property.update({ where: { id: app.propertyId }, data: { status: "RENTED" } });
   const application = await prisma.application.update({ where: { id: appId }, data: { status: "APPROVED" } });
+  // capture the other pending applicants before auto-rejecting them, so the route can notify them
+  const siblings = await prisma.application.findMany({
+    where: { propertyId: app.propertyId, status: "PENDING", NOT: { id: appId } },
+    select: { tenantId: true },
+  });
   await prisma.application.updateMany({
     where: { propertyId: app.propertyId, status: "PENDING", NOT: { id: appId } },
     data: { status: "REJECTED" },
   });
-  return { application, tenancy, tenantId: app.tenantId };
+  return { application, tenancy, tenantId: app.tenantId, rejectedTenantIds: siblings.map((x) => x.tenantId) };
 }
 
 export async function reject(landlordId: string, appId: string) {
