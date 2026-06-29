@@ -8,6 +8,7 @@ import { tenanciesRouter } from "./routes/tenancies";
 import { ticketsRouter } from "./routes/tickets";
 import { statsRouter } from "./routes/stats";
 import { applicationsRouter } from "./routes/applications";
+import { chatRouter } from "./routes/chat";
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
   app.use("/api/tickets", ticketsRouter);
   app.use("/api/stats", statsRouter);
   app.use("/api/applications", applicationsRouter);
+  app.use("/api/conversations", chatRouter);
 
   app.use(errorHandler);
   return app;
