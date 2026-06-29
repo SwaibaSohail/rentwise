@@ -4,7 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { propertiesApi, type Property, type PropertyInput } from "../lib/properties";
 import { tenanciesApi, type Tenancy } from "../lib/tenancies";
 import { ticketsApi, type Ticket, type TicketStatus } from "../lib/tickets";
+import { applicationsApi } from "../lib/applications";
 import { useTicketEvents } from "../hooks/useTicketEvents";
+import { useApplicationEvents } from "../hooks/useApplicationEvents";
 import StatCard from "../components/StatCard";
 import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
@@ -28,6 +30,7 @@ export default function LandlordDashboard() {
   const [ticketComments, setTicketComments] = useState<Record<string, string>>({});
 
   useTicketEvents();
+  useApplicationEvents();
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties", "mine"],
@@ -42,6 +45,10 @@ export default function LandlordDashboard() {
     queryFn: ticketsApi.listLandlord,
   });
   const { data: stats } = useQuery({ queryKey: ["stats", "landlord"], queryFn: statsApi.landlord });
+  const { data: pendingApplications = [] } = useQuery({
+    queryKey: ["applications", "landlord"],
+    queryFn: applicationsApi.listLandlord,
+  });
 
   const updateTicketMut = useMutation({
     mutationFn: (vars: { id: string; data: { message?: string; newStatus?: TicketStatus } }) =>
@@ -71,6 +78,21 @@ export default function LandlordDashboard() {
     onSuccess: () => { invalidate(); setAssignFor(null); setAssignEmail(""); setAssignError(""); },
   });
   const endMut = useMutation({ mutationFn: tenanciesApi.end, onSuccess: invalidate });
+
+  const invalidateApplications = () => {
+    qc.invalidateQueries({ queryKey: ["applications"] });
+    qc.invalidateQueries({ queryKey: ["properties"] });
+    qc.invalidateQueries({ queryKey: ["tenancies"] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
+  };
+  const approveMut = useMutation({
+    mutationFn: (id: string) => applicationsApi.approve(id),
+    onSuccess: invalidateApplications,
+  });
+  const rejectMut = useMutation({
+    mutationFn: (id: string) => applicationsApi.reject(id),
+    onSuccess: invalidateApplications,
+  });
 
   async function handleSubmit(data: PropertyInput) {
     if (editing) await updateMut.mutateAsync({ id: editing.id, data });
@@ -191,6 +213,39 @@ export default function LandlordDashboard() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {pendingApplications.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-3 text-lg font-semibold">Applications</h2>
+          <ul className="grid gap-3">
+            {pendingApplications.map((app) => (
+              <li key={app.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                <div>
+                  <p className="font-medium">{app.tenant?.name ?? "Tenant"}</p>
+                  <p className="text-sm text-muted-foreground">{app.property?.title ?? app.propertyId}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={approveMut.isPending || rejectMut.isPending}
+                    onClick={() => approveMut.mutate(app.id)}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={approveMut.isPending || rejectMut.isPending}
+                    onClick={() => rejectMut.mutate(app.id)}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-10">
         <h2 className="mb-3 text-lg font-semibold">Maintenance tickets</h2>

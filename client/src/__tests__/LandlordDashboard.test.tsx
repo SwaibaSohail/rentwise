@@ -23,6 +23,18 @@ vi.mock("../lib/tickets", () => ({
 vi.mock("../hooks/useTicketEvents", () => ({
   useTicketEvents: () => {},
 }));
+vi.mock("../lib/applications", () => ({
+  applicationsApi: {
+    listMine: vi.fn().mockResolvedValue([]),
+    listLandlord: vi.fn().mockResolvedValue([]),
+    apply: vi.fn(),
+    approve: vi.fn(),
+    reject: vi.fn(),
+  },
+}));
+vi.mock("../hooks/useApplicationEvents", () => ({
+  useApplicationEvents: () => {},
+}));
 vi.mock("../lib/stats", () => ({
   statsApi: {
     landlord: vi.fn().mockResolvedValue({

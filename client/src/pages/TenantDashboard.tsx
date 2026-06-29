@@ -4,7 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { propertiesApi, type Property } from "../lib/properties";
 import { tenanciesApi } from "../lib/tenancies";
 import { ticketsApi, type CreateTicketInput } from "../lib/tickets";
+import { applicationsApi } from "../lib/applications";
 import { useTicketEvents } from "../hooks/useTicketEvents";
+import { useApplicationEvents } from "../hooks/useApplicationEvents";
 import StatCard from "../components/StatCard";
 import { statsApi } from "../lib/stats";
 import PropertyCard from "../components/PropertyCard";
@@ -21,6 +23,7 @@ export default function TenantDashboard() {
   const [selected, setSelected] = useState<Property | null>(null);
 
   useTicketEvents();
+  useApplicationEvents();
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties", "available"],
@@ -35,8 +38,11 @@ export default function TenantDashboard() {
     queryFn: ticketsApi.listMine,
     enabled: !!tenancy?.property,
   });
-
   const { data: stats } = useQuery({ queryKey: ["stats", "tenant"], queryFn: statsApi.tenant });
+  const { data: myApplications = [] } = useQuery({
+    queryKey: ["applications", "mine"],
+    queryFn: applicationsApi.listMine,
+  });
 
   const createTicketMut = useMutation({
     mutationFn: (data: CreateTicketInput) => ticketsApi.create(data),
@@ -45,6 +51,26 @@ export default function TenantDashboard() {
       qc.invalidateQueries({ queryKey: ["stats"] });
     },
   });
+
+  const applyMut = useMutation({
+    mutationFn: (propertyId: string) => applicationsApi.apply(propertyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+
+  const appliedPropertyIds = new Set(
+    myApplications
+      .filter((a) => a.status === "PENDING" || a.status === "APPROVED")
+      .map((a) => a.propertyId)
+  );
+  const hasHome = !!tenancy;
+
+  const statusBadgeClass = (status: string) => {
+    if (status === "APPROVED") return "text-green-700 bg-green-100";
+    if (status === "REJECTED") return "text-red-700 bg-red-100";
+    return "text-yellow-700 bg-yellow-100";
+  };
 
   return (
     <main className="mx-auto max-w-5xl p-8">
@@ -106,11 +132,46 @@ export default function TenantDashboard() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((p) => (
-              <PropertyCard key={p.id} property={p} onClick={() => setSelected(p)} />
+              <PropertyCard
+                key={p.id}
+                property={p}
+                onClick={() => setSelected(p)}
+                actions={
+                  p.status === "AVAILABLE" && !hasHome ? (
+                    appliedPropertyIds.has(p.id) ? (
+                      <Button size="sm" variant="outline" disabled>Applied</Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={applyMut.isPending}
+                        onClick={(e) => { e.stopPropagation(); applyMut.mutate(p.id); }}
+                      >
+                        Apply
+                      </Button>
+                    )
+                  ) : undefined
+                }
+              />
             ))}
           </div>
         )}
       </section>
+
+      {myApplications.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold">My applications</h2>
+          <ul className="grid gap-3">
+            {myApplications.map((app) => (
+              <li key={app.id} className="flex items-center justify-between rounded-lg border p-3">
+                <span className="font-medium">{app.property?.title ?? app.propertyId}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(app.status)}`}>
+                  {app.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent>
