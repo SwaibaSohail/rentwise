@@ -44,6 +44,12 @@ enum TicketStatus {
   CLOSED
 }
 
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id          String   @id @default(cuid())
   firebaseUid String   @unique
@@ -58,6 +64,7 @@ model User {
   tenancies     Tenancy[]
   ticketsFiled  MaintenanceTicket[] @relation("TicketTenant")
   ticketUpdates TicketUpdate[]
+  applications  Application[]
 }
 
 model Property {
@@ -75,8 +82,9 @@ model Property {
   imageUrls   String[]
   createdAt   DateTime       @default(now())
 
-  tenancies Tenancy[]
-  tickets   MaintenanceTicket[]
+  tenancies    Tenancy[]
+  tickets      MaintenanceTicket[]
+  applications Application[]
 }
 
 model Tenancy {
@@ -116,4 +124,16 @@ model TicketUpdate {
   message   String
   newStatus TicketStatus?
   createdAt DateTime          @default(now())
+}
+
+model Application {
+  id         String            @id @default(cuid())
+  propertyId String
+  property   Property          @relation(fields: [propertyId], references: [id])
+  tenantId   String
+  tenant     User              @relation(fields: [tenantId], references: [id])
+  status     ApplicationStatus @default(PENDING)
+  createdAt  DateTime          @default(now())
+
+  @@unique([propertyId, tenantId])
 }
