@@ -60,11 +60,14 @@ model User {
   avatarUrl   String?
   createdAt   DateTime @default(now())
 
-  properties    Property[]          @relation("LandlordProperties")
-  tenancies     Tenancy[]
-  ticketsFiled  MaintenanceTicket[] @relation("TicketTenant")
-  ticketUpdates TicketUpdate[]
-  applications  Application[]
+  properties            Property[]          @relation("LandlordProperties")
+  tenancies             Tenancy[]
+  ticketsFiled          MaintenanceTicket[] @relation("TicketTenant")
+  ticketUpdates         TicketUpdate[]
+  applications          Application[]
+  landlordConversations Conversation[]      @relation("LandlordConversations")
+  tenantConversations   Conversation[]      @relation("TenantConversations")
+  sentMessages          Message[]           @relation("SentMessages")
 }
 
 model Property {
@@ -136,4 +139,27 @@ model Application {
   createdAt  DateTime          @default(now())
 
   @@unique([propertyId, tenantId])
+}
+
+model Conversation {
+  id         String    @id @default(cuid())
+  landlordId String
+  landlord   User      @relation("LandlordConversations", fields: [landlordId], references: [id])
+  tenantId   String
+  tenant     User      @relation("TenantConversations", fields: [tenantId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  messages   Message[]
+
+  @@unique([landlordId, tenantId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime     @default(now())
 }
