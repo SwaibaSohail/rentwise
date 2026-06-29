@@ -16,13 +16,14 @@ import PropertyCard from "../components/PropertyCard";
 import TicketForm from "../components/TicketForm";
 import TicketList from "../components/TicketList";
 import ChatThread from "../components/ChatThread";
+import Header from "../components/layout/Header";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 
 export default function TenantDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout: _logout } = useAuth();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<Property | null>(null);
   const [chatConvId, setChatConvId] = useState<string | null>(null);
@@ -93,187 +94,199 @@ export default function TenantDashboard() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Browse rentals</h1>
-          <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Page heading */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Browse rentals</h1>
+          <p className="text-muted-foreground mt-0.5">Welcome, {user?.name}.</p>
         </div>
-        <Button variant="outline" onClick={() => logout()}>Log out</Button>
-      </div>
 
-      {stats && (
-        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatCard label="Your unit" value={stats.hasHome ? stats.home!.title : "None yet"} sub={stats.hasHome ? `${stats.home!.city} · $${stats.home!.rentAmount.toLocaleString()}/mo` : undefined} />
-          <StatCard label="Open tickets" value={stats.openTickets} />
-          <StatCard label="Total tickets" value={stats.totalTickets} />
-        </section>
-      )}
+        {/* Stats */}
+        {stats && (
+          <section className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <StatCard label="Your unit" value={stats.hasHome ? stats.home!.title : "None yet"} sub={stats.hasHome ? `${stats.home!.city} · $${stats.home!.rentAmount.toLocaleString()}/mo` : undefined} />
+            <StatCard label="Open tickets" value={stats.openTickets} />
+            <StatCard label="Total tickets" value={stats.totalTickets} />
+          </section>
+        )}
 
-      {tenancy?.property && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">Your home</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <PropertyCard property={tenancy.property} onClick={() => setSelected(tenancy.property!)} />
-          </div>
-        </section>
-      )}
-
-      {tenancy?.property && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">Rent</h2>
-          <Button
-            onClick={() => checkoutMut.mutate()}
-            disabled={checkoutMut.isPending}
-          >
-            {checkoutMut.isPending ? "Redirecting…" : `Pay rent ($${tenancy.property.rentAmount.toLocaleString()})`}
-          </Button>
-          {myPayments.length > 0 && (
-            <div className="mt-4">
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Payment history</h3>
-              <ul className="grid gap-2">
-                {myPayments.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                    <span>{p.tenancy?.property?.title ?? "Rent"}</span>
-                    <span className="text-muted-foreground">${(p.amount / 100).toLocaleString()}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        p.status === "PAID"
-                          ? "bg-green-100 text-green-700"
-                          : p.status === "FAILED"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                    <span className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
-                  </li>
-                ))}
-              </ul>
+        {/* Your home */}
+        {tenancy?.property && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Your home</h2>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <PropertyCard property={tenancy.property} onClick={() => setSelected(tenancy.property!)} />
             </div>
-          )}
-        </section>
-      )}
+          </section>
+        )}
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">Maintenance</h2>
-        {tenancy?.property ? (
-          <div className="grid gap-6">
-            <div>
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">File a new ticket</h3>
-              <div className="max-w-lg">
-                <TicketForm
-                  onSubmit={async (data) => { await createTicketMut.mutateAsync(data); }}
-                />
+        {/* Rent */}
+        {tenancy?.property && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Rent</h2>
+            <Button
+              onClick={() => checkoutMut.mutate()}
+              disabled={checkoutMut.isPending}
+              className="font-semibold"
+            >
+              {checkoutMut.isPending ? "Redirecting…" : `Pay rent ($${tenancy.property.rentAmount.toLocaleString()})`}
+            </Button>
+            {myPayments.length > 0 && (
+              <div className="mt-5">
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground">Payment history</h3>
+                <ul className="grid gap-2">
+                  {myPayments.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3 text-sm shadow-sm">
+                      <span>{p.tenancy?.property?.title ?? "Rent"}</span>
+                      <span className="text-muted-foreground">${(p.amount / 100).toLocaleString()}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          p.status === "PAID"
+                            ? "bg-green-100 text-green-700"
+                            : p.status === "FAILED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                      <span className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Maintenance */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold">Maintenance</h2>
+          {tenancy?.property ? (
+            <div className="grid gap-6">
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">File a new ticket</h3>
+                <div className="max-w-lg">
+                  <TicketForm
+                    onSubmit={async (data) => { await createTicketMut.mutateAsync(data); }}
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">Your tickets</h3>
+                <TicketList tickets={myTickets} />
               </div>
             </div>
-            <div>
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Your tickets</h3>
-              <TicketList tickets={myTickets} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              You need an active tenancy to file maintenance tickets. Browse available rentals below.
+            </p>
+          )}
+        </section>
+
+        {/* Message landlord */}
+        {tenancy?.property && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Message your landlord</h2>
+            <Button
+              onClick={async () => {
+                const landlordId = tenancy.property!.landlordId;
+                const conv = await chatApi.start(landlordId);
+                setChatConvId(conv.id);
+                setChatOpen(true);
+              }}
+            >
+              Open chat
+            </Button>
+          </section>
+        )}
+
+        {/* Available rentals */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold">Available rentals</h2>
+          {isLoading ? (
+            <p className="text-muted-foreground">Loading…</p>
+          ) : properties.length === 0 ? (
+            <p className="text-muted-foreground">No properties available right now.</p>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {properties.map((p) => (
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  onClick={() => setSelected(p)}
+                  actions={
+                    p.status === "AVAILABLE" && !hasHome ? (
+                      appliedPropertyIds.has(p.id) ? (
+                        <Button size="sm" variant="outline" disabled>Applied</Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          disabled={applyMut.isPending}
+                          onClick={(e) => { e.stopPropagation(); applyMut.mutate(p.id); }}
+                        >
+                          Apply
+                        </Button>
+                      )
+                    ) : undefined
+                  }
+                />
+              ))}
             </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            You need an active tenancy to file maintenance tickets. Browse available rentals below.
-          </p>
-        )}
-      </section>
-
-      {tenancy?.property && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">Message your landlord</h2>
-          <Button
-            onClick={async () => {
-              const landlordId = tenancy.property!.landlordId;
-              const conv = await chatApi.start(landlordId);
-              setChatConvId(conv.id);
-              setChatOpen(true);
-            }}
-          >
-            Open chat
-          </Button>
-        </section>
-      )}
-
-      <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">Available rentals</h2>
-        {isLoading ? (
-          <p>Loading…</p>
-        ) : properties.length === 0 ? (
-          <p className="text-muted-foreground">No properties available right now.</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.map((p) => (
-              <PropertyCard
-                key={p.id}
-                property={p}
-                onClick={() => setSelected(p)}
-                actions={
-                  p.status === "AVAILABLE" && !hasHome ? (
-                    appliedPropertyIds.has(p.id) ? (
-                      <Button size="sm" variant="outline" disabled>Applied</Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        disabled={applyMut.isPending}
-                        onClick={(e) => { e.stopPropagation(); applyMut.mutate(p.id); }}
-                      >
-                        Apply
-                      </Button>
-                    )
-                  ) : undefined
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {myApplications.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">My applications</h2>
-          <ul className="grid gap-3">
-            {myApplications.map((app) => (
-              <li key={app.id} className="flex items-center justify-between rounded-lg border p-3">
-                <span className="font-medium">{app.property?.title ?? app.propertyId}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(app.status)}`}>
-                  {app.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent>
-          {selected && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selected.title}</DialogTitle>
-              </DialogHeader>
-              {selected.imageUrls[0] && (
-                <img src={selected.imageUrls[0]} alt={selected.title} className="h-48 w-full rounded object-cover" />
-              )}
-              <p className="text-sm text-muted-foreground">{selected.address}, {selected.city}</p>
-              <p>{selected.description}</p>
-              <p className="font-semibold">${selected.rentAmount.toLocaleString()}/mo · {selected.bedrooms} bed · {selected.bathrooms} bath</p>
-            </>
           )}
-        </DialogContent>
-      </Dialog>
+        </section>
 
-      <Dialog open={chatOpen} onOpenChange={(o) => { if (!o) { setChatOpen(false); setChatConvId(null); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chat with your landlord</DialogTitle>
-          </DialogHeader>
-          {chatConvId && user && (
-            <ChatThread conversationId={chatConvId} meId={user.id} />
-          )}
-        </DialogContent>
-      </Dialog>
-    </main>
+        {/* My applications */}
+        {myApplications.length > 0 && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">My applications</h2>
+            <ul className="grid gap-3">
+              {myApplications.map((app) => (
+                <li key={app.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+                  <span className="font-medium">{app.property?.title ?? app.propertyId}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(app.status)}`}>
+                    {app.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Property detail dialog */}
+        <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+          <DialogContent>
+            {selected && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selected.title}</DialogTitle>
+                </DialogHeader>
+                {selected.imageUrls[0] && (
+                  <img src={selected.imageUrls[0]} alt={selected.title} className="h-48 w-full rounded-xl object-cover" />
+                )}
+                <p className="text-sm text-muted-foreground">{selected.address}, {selected.city}</p>
+                <p>{selected.description}</p>
+                <p className="font-semibold">${selected.rentAmount.toLocaleString()}/mo · {selected.bedrooms} bed · {selected.bathrooms} bath</p>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Chat dialog */}
+        <Dialog open={chatOpen} onOpenChange={(o) => { if (!o) { setChatOpen(false); setChatConvId(null); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Chat with your landlord</DialogTitle>
+            </DialogHeader>
+            {chatConvId && user && (
+              <ChatThread conversationId={chatConvId} meId={user.id} />
+            )}
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
   );
 }
