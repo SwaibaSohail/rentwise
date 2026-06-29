@@ -7,6 +7,7 @@ import { propertiesRouter } from "./routes/properties";
 import { tenanciesRouter } from "./routes/tenancies";
 import { ticketsRouter } from "./routes/tickets";
 import { statsRouter } from "./routes/stats";
+import { applicationsRouter } from "./routes/applications";
 
 export function createApp() {
   const app = express();
@@ -22,6 +23,7 @@ export function createApp() {
   app.use("/api/tenancies", tenanciesRouter);
   app.use("/api/tickets", ticketsRouter);
   app.use("/api/stats", statsRouter);
+  app.use("/api/applications", applicationsRouter);
 
   app.use(errorHandler);
   return app;
