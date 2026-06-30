@@ -4,10 +4,6 @@ A multi-role rental-management platform for **landlords** and **tenants** — li
 
 ### ▶️ Live demo: **https://rentwise-client.vercel.app**
 
-> First load may take ~40s — the API runs on a free Render instance that sleeps when idle.
-> Sign up as a **Landlord** (list properties, review applications) and as a **Tenant** (browse, apply, pay rent) to see both sides.
-> Stripe is in **test mode** — pay rent with card `4242 4242 4242 4242`, any future expiry, any CVC.
-
 ---
 
 ## ✨ Features
@@ -103,27 +99,3 @@ npm run dev                            # client on :5173, API on :4000 (concurre
 ```
 
 Open http://localhost:5173.
-
-### Tests
-
-```bash
-npm test                 # server + client
-npm test --workspace server
-npm test --workspace client
-```
-
----
-
-## ☁️ Deployment
-
-- **Client → Vercel** — root `client/`, framework Vite; env `VITE_API_URL` (the API URL) + `VITE_FIREBASE_*`.
-- **API → Render** — build `npm install && npm run build --workspace server`, start `npm start --workspace server`; set all `server/.env` vars, with `CLIENT_URL` = the deployed client origin.
-- **DB → Neon** — managed Postgres; run `prisma migrate deploy`.
-
-Add the deployed client domain to **Firebase → Authentication → Authorized domains** so login works in production.
-
----
-
-## 📄 License
-
-MIT — built as a portfolio project.
